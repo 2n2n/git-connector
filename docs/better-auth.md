@@ -109,6 +109,10 @@ That command reads [`lib/auth.js`](../lib/auth.js) and applies the Better Auth s
 
 Prisma, Drizzle, and other adapters are documented at [Better Auth databases](https://www.better-auth.com/docs/concepts/database). This project uses the built-in Kysely adapter so `npm run auth:migrate` works without an ORM.
 
+Disconnect deletes the Better Auth user row (and provider tokens), then signs out. That keeps GitHub and GitLab as a single connection: the leftover account from one provider cannot block the other with `account_not_linked`.
+
+GitHub and GitLab are trusted for account linking, so signing in with the same email after a previous provider still works if a user row is left behind.
+
 ## What stays on the server
 
 The GitHub/GitLab access token is stored encrypted on the `account` row (`account.encryptOAuthTokens: true`). Server code reads it with `auth.api.getAccessToken`. It is not sent to the browser.

@@ -77,7 +77,7 @@ Connect uses the portable React client in `lib/auth-client.js`:
 
 An Expo app would use the same `createAuthClient` from `better-auth/react`, plus `expoClient` from `@better-auth/expo/client` and `baseURL` pointing at this server.
 
-Disconnect is a Server Action in `app/actions.js`: clear the target cookie, then `auth.api.signOut`.
+Disconnect is a Server Action in `app/actions.js`: clear the target cookie, delete the Better Auth user (so a leftover GitLab or GitHub account cannot block the other provider with `account_not_linked`), then sign out.
 
 ## Listing repositories
 
