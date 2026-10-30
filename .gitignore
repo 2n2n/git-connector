@@ -32,6 +32,12 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# Better Auth SQLite
+/data
+*.sqlite
+*.sqlite-journal
 
 # vercel
 .vercel

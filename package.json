@@ -6,9 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "auth:migrate": "npx auth@latest migrate --yes --config lib/auth.js"
   },
   "dependencies": {
+    "@better-auth/expo": "^1.7.14",
+    "better-auth": "^1.7.14",
+    "better-sqlite3": "^13.0.3",
     "next": "16.4.3",
     "react": "19.3.0",
     "react-dom": "19.3.0"
