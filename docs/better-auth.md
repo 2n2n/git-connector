@@ -1,8 +1,13 @@
 # Better Auth
 
-This app uses [Better Auth](https://www.better-auth.com) for GitHub and GitLab OAuth. The same `better-auth/react` client works in any React app. An Expo app can talk to this backend with `@better-auth/expo`.
+This app uses [Better Auth](https://www.better-auth.com) for GitHub and GitLab OAuth through the reusable [`@github-connector/auth`](../packages/auth) package. The same client works in any React app. An Expo app can talk to this backend with `@better-auth/expo`.
 
-Server config lives in [`lib/auth.js`](../lib/auth.js). The browser client lives in [`lib/auth-client.js`](../lib/auth-client.js).
+This app’s wrappers:
+
+- Server: [`lib/auth.js`](../lib/auth.js) → `createGitAuth()`
+- Browser: [`lib/auth-client.js`](../lib/auth-client.js) → `createGitAuthClient()`
+
+Reuse in another project: [packages/auth/README.md](../packages/auth/README.md).
 
 ## Default database: SQLite
 
@@ -53,7 +58,7 @@ SQLite is the right default for local development. It is a file on disk, so it w
 
 ## Switch to PostgreSQL or MySQL
 
-Better Auth accepts a Node driver pool in the `database` option of [`lib/auth.js`](../lib/auth.js). Replace the SQLite client only. Keep `secret`, `baseURL`, `socialProviders`, and `plugins` as they are.
+Pass a Node driver pool to `createGitAuth({ database })`. Replace the SQLite client only. Providers and plugins stay as they are.
 
 ### PostgreSQL
 
@@ -63,14 +68,12 @@ npm install pg
 
 ```js
 import { Pool } from "pg";
+import { createGitAuth } from "@github-connector/auth/server";
 
-export const auth = betterAuth({
-  secret: process.env.AUTH_SECRET,
-  baseURL: process.env.AUTH_URL,
+export const auth = createGitAuth({
   database: new Pool({
     connectionString: process.env.DATABASE_URL,
   }),
-  // ...providers and plugins unchanged
 });
 ```
 
@@ -86,12 +89,10 @@ npm install mysql2
 
 ```js
 import { createPool } from "mysql2/promise";
+import { createGitAuth } from "@github-connector/auth/server";
 
-export const auth = betterAuth({
-  secret: process.env.AUTH_SECRET,
-  baseURL: process.env.AUTH_URL,
+export const auth = createGitAuth({
   database: createPool(process.env.DATABASE_URL),
-  // ...providers and plugins unchanged
 });
 ```
 

@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { disconnectGitAuth } from "@github-connector/auth/server";
 import { auth } from "@/lib/auth";
 import { clearTargetCookie, setTargetCookie } from "@/lib/target";
 
@@ -20,24 +21,7 @@ async function requireUser() {
 
 export async function disconnect() {
   await clearTargetCookie();
-  const requestHeaders = await headers();
-  const session = await auth.api.getSession({
-    headers: requestHeaders,
-  });
-
-  if (session?.user?.id) {
-    const ctx = await auth.$context;
-    await ctx.internalAdapter.deleteUser(session.user.id);
-  }
-
-  try {
-    await auth.api.signOut({
-      headers: requestHeaders,
-    });
-  } catch {
-    // Session rows may already be gone after deleteUser.
-  }
-
+  await disconnectGitAuth(auth, await headers());
   redirect("/");
 }
 

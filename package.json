@@ -2,15 +2,20 @@
   "name": "github-connector",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "npm test -w @github-connector/auth",
     "auth:migrate": "npx auth@latest migrate --yes --config lib/auth.js"
   },
   "dependencies": {
     "@better-auth/expo": "^1.7.14",
+    "@github-connector/auth": "*",
     "better-auth": "^1.7.14",
     "better-sqlite3": "^13.0.3",
     "next": "16.4.3",

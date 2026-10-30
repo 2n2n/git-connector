@@ -11,7 +11,7 @@ A small Next.js app that connects to **GitHub** or **GitLab** with **OAuth 2.0**
 
 The app does not write to repositories, clone code, or open issues. It only authenticates and lists/selects.
 
-How the app is built: [docs/implementation.md](docs/implementation.md). Better Auth and database setup: [docs/better-auth.md](docs/better-auth.md).
+How the app is built: [docs/implementation.md](docs/implementation.md). Better Auth and database setup: [docs/better-auth.md](docs/better-auth.md). Reuse the auth flow in another project: [packages/auth/README.md](packages/auth/README.md).
 
 ## Prerequisites
 
@@ -77,7 +77,7 @@ App      →  stores user, session, and encrypted access_token in SQLite
 Dashboard→  calls GitHub GET /user/repos or GitLab GET /api/v4/projects
 ```
 
-[Better Auth](https://www.better-auth.com) handles CSRF `state`, the code exchange, and the session cookie. The same `better-auth/react` client works in any React app. An Expo app can talk to this backend with `@better-auth/expo`. The provider access token stays on the server (`auth.api.getAccessToken`) and is used only in route handlers and Server Components. It is not sent to browser JavaScript.
+[Better Auth](https://www.better-auth.com) handles CSRF `state`, the code exchange, and the session cookie, wrapped by [`@github-connector/auth`](packages/auth). The same `createGitAuthClient()` works in any React app. An Expo app can talk to this backend with `expoClient` from `@better-auth/expo/client`. The provider access token stays on the server (`getGitSession`) and is used only in route handlers and Server Components. It is not sent to browser JavaScript.
 
 You can only be connected to one provider at a time. Disconnect, then connect the other.
 
@@ -102,8 +102,9 @@ All `/api/repos` and `/api/target` routes require a signed-in session.
 ## Project layout
 
 ```
-lib/auth.js                      Better Auth server (GitHub + GitLab)
-lib/auth-client.js               better-auth/react client
+packages/auth/                   Reusable GitHub/GitLab auth library
+lib/auth.js                      createGitAuth() for this app
+lib/auth-client.js               createGitAuthClient() for this app
 app/dashboard/page.js            Repo list and target
 app/actions.js                   Sign-out, select/clear target
 app/api/auth/[...all]/           OAuth callbacks
@@ -120,5 +121,6 @@ npm run dev           # http://localhost:3000
 npm run build         # production build
 npm run start         # serve the production build
 npm run lint          # ESLint
+npm test              # unit tests for @github-connector/auth
 npm run auth:migrate  # create/update the local SQLite auth schema
 ```

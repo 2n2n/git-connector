@@ -10,9 +10,9 @@ It does **not** write to repositories, clone code, or open issues.
 | --- | --- |
 | Framework | Next.js 16.4.3, App Router, JavaScript |
 | UI | React 19, Tailwind CSS 4 |
-| Auth | Better Auth (`better-auth`), SQLite sessions, encrypted OAuth tokens |
+| Auth | `@github-connector/auth` (Better Auth GitHub/GitLab OAuth) |
 | Providers | GitHub OAuth App, GitLab.com OAuth application |
-| Clients | `better-auth/react` (any React app); `@better-auth/expo` ready for Expo |
+| Clients | `@github-connector/auth/client` (any React app); Expo via `expoClient` |
 
 ## User flow
 
@@ -37,8 +37,9 @@ User     →  select repo → targeted_repo cookie
 ## Project layout
 
 ```
-lib/auth.js                      Better Auth server (providers, SQLite, Expo plugin)
-lib/auth-client.js               better-auth/react client (works in any React app)
+packages/auth/                   Reusable GitHub/GitLab Better Auth library
+lib/auth.js                      createGitAuth() wrapper for this app
+lib/auth-client.js               createGitAuthClient() wrapper
 app/page.js                      Home: connect buttons
 app/layout.js                    Root layout
 app/actions.js                   Server actions: disconnect, target
@@ -61,23 +62,31 @@ data/auth.sqlite                 Local Better Auth database (gitignored)
 
 ## Authentication
 
-Configured in `lib/auth.js`.
+The OAuth flow lives in [`packages/auth`](../packages/auth). This app is a thin consumer:
+
+```js
+import { createGitAuth } from "@github-connector/auth/server";
+import { createGitAuthClient } from "@github-connector/auth/client";
+
+export const auth = createGitAuth();
+export const authClient = createGitAuthClient();
+```
 
 - Secret and origin come from `AUTH_SECRET` and `AUTH_URL`
-- GitHub scopes: `read:user user:email repo`
-- GitLab scopes: `read_user read_api` (gitlab.com only)
+- GitHub scopes: `repo` (Better Auth also requests identity scopes)
+- GitLab scopes: `read_api` (gitlab.com only)
 - `expo()` plugin and `exp://` trusted origins so an Expo app can use this same backend
 - `nextCookies()` so server actions can set the session cookie
 
-SQLite (`data/auth.sqlite`) stores the user, session, and provider account. The GitHub/GitLab access token is encrypted in the account row and read only on the server via `auth.api.getAccessToken`. It is not sent to the browser.
+SQLite (`data/auth.sqlite`) stores the user, session, and provider account. The GitHub/GitLab access token is encrypted in the account row and read only on the server via `getGitSession` / `auth.api.getAccessToken`. It is not sent to the browser.
 
 Connect uses the portable React client in `lib/auth-client.js`:
 
 - `authClient.signIn.social({ provider: "github" | "gitlab", callbackURL: "/dashboard" })`
 
-An Expo app would use the same `createAuthClient` from `better-auth/react`, plus `expoClient` from `@better-auth/expo/client` and `baseURL` pointing at this server.
+Another React app uses `createGitAuthClient({ baseURL })`. An Expo app also passes `expoClient` from `@better-auth/expo/client`. See [packages/auth/README.md](../packages/auth/README.md).
 
-Disconnect is a Server Action in `app/actions.js`: clear the target cookie, delete the Better Auth user (so a leftover GitLab or GitHub account cannot block the other provider with `account_not_linked`), then sign out.
+Disconnect is a Server Action in `app/actions.js`: clear the target cookie, then `disconnectGitAuth` (delete the Better Auth user so a leftover GitLab or GitHub account cannot block the other provider with `account_not_linked`).
 
 ## Listing repositories
 
