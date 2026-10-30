@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { disconnect } from "@/app/actions";
+import { listMarkdownFiles } from "@/lib/markdown-files";
 import {
   checkProjectManagerFile,
   listBranchesForTarget,
@@ -10,6 +11,7 @@ import { getConnectorSession, listReposForSession } from "@/lib/repos";
 import { getTarget } from "@/lib/target";
 import { GitHubIcon, GitLabIcon } from "@/components/Icons";
 import { RepoList } from "@/components/RepoList";
+import { MarkdownMap } from "@/components/MarkdownMap";
 import { TargetedRepo } from "@/components/TargetedRepo";
 
 async function Dashboard() {
@@ -39,6 +41,9 @@ async function Dashboard() {
   let projectManager = null;
   let projectManagerError = null;
   let branchListError = null;
+  let markdownFiles = [];
+  let markdownTruncated = false;
+  let markdownError = null;
 
   if (target) {
     try {
@@ -54,15 +59,25 @@ async function Dashboard() {
     "";
 
   if (target && selectedBranch) {
-    try {
-      projectManager = await checkProjectManagerFile(
-        session,
-        target,
-        selectedBranch,
-      );
-    } catch (err) {
+    const [projectManagerResult, markdownResult] = await Promise.allSettled([
+      checkProjectManagerFile(session, target, selectedBranch),
+      listMarkdownFiles(session, target, selectedBranch),
+    ]);
+
+    if (projectManagerResult.status === "fulfilled") {
+      projectManager = projectManagerResult.value;
+    } else {
       projectManagerError =
-        err.message || "Could not check PROJECT_MANAGER.md.";
+        projectManagerResult.reason?.message ||
+        "Could not check PROJECT_MANAGER.md.";
+    }
+
+    if (markdownResult.status === "fulfilled") {
+      markdownFiles = markdownResult.value.files;
+      markdownTruncated = markdownResult.value.truncated;
+    } else {
+      markdownError =
+        markdownResult.reason?.message || "Could not list Markdown files.";
     }
   } else if (target && branchListError) {
     projectManagerError = branchListError;
@@ -105,6 +120,16 @@ async function Dashboard() {
         projectManagerError={projectManagerError}
       />
 
+      {target ? (
+        <MarkdownMap
+          key={`${target.provider}:${target.id}:${selectedBranch}`}
+          files={markdownFiles}
+          branch={selectedBranch}
+          truncated={markdownTruncated}
+          error={markdownError}
+        />
+      ) : null}
+
       {error ? (
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
           {error}
@@ -129,6 +154,7 @@ function DashboardFallback() {
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-6 py-10">
       <div className="h-8 w-48 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
       <div className="h-24 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-800" />
+      <div className="h-40 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-800" />
       <div className="h-64 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-800" />
       <p className="text-sm text-zinc-500">Loading repositories…</p>
     </main>

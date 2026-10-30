@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { disconnectGitAuth } from "@github-connector/auth/server";
 import { auth } from "@/lib/auth";
+import { readMarkdownFileContent } from "@/lib/markdown-files";
 import {
   createProjectManagerFile,
   resolveTargetBranch,
@@ -108,4 +109,37 @@ export async function createProjectManager(branch) {
 
   revalidatePath("/dashboard");
   return { ok: true };
+}
+
+export async function readMarkdownFile(filePath) {
+  await requireUser();
+  const session = await getConnectorSession();
+  if (!session) {
+    return { ok: false, error: "Not authenticated" };
+  }
+
+  const target = await getTarget();
+  if (!target || target.provider !== session.provider) {
+    return { ok: false, error: "Select a repository first." };
+  }
+
+  const branch = resolveTargetBranch(target);
+  if (!branch) {
+    return { ok: false, error: "Select a branch first." };
+  }
+
+  try {
+    const content = await readMarkdownFileContent(
+      session,
+      target,
+      branch,
+      filePath,
+    );
+    return { ok: true, content };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error.message || "Could not read that file.",
+    };
+  }
 }

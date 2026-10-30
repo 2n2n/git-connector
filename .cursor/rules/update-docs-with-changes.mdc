@@ -1,0 +1,46 @@
+---
+description: Keep project docs in the same change as code. Apply after every implementation, not as a follow-up.
+alwaysApply: true
+---
+
+# Docs travel with the change
+
+A requested change is not done until matching documentation is updated in the **same turn**. Do not leave docs for a later agent, commit, or chat.
+
+## When to update
+
+Update docs when the change alters any of: user flow, UI copy, API routes, env vars, scripts, project layout, auth, OAuth setup, or package public API.
+
+Skip when the change is comments-only, tests-only, or an internal refactor with the same public contract.
+
+## Where to write
+
+Edit the existing file that already documents that surface. Keep one source of truth; do not duplicate the same paragraph across files.
+
+| Surface | File |
+| --- | --- |
+| What the app does, setup, env table, API routes, scripts | `README.md` |
+| Stack, layout, flows, internals | `docs/implementation.md` |
+| Better Auth, SQLite, other databases | `docs/better-auth.md` |
+| Creating OAuth apps and filling `.env.local` | `docs/oauth-setup.md` |
+| `@github-connector/auth` install and API | `packages/auth/README.md` |
+
+Add a new doc only when the change introduces a surface none of these cover, and link it from `README.md`.
+
+## How to update
+
+1. Diff the change against the table above.
+2. Patch every matching file so a reader of that file alone would not be misled.
+3. Drop or rewrite stale names, routes, env vars, and steps the change retired.
+
+Done when every contract change has a matching doc edit, or you have confirmed no documented surface moved.
+
+```
+# ✅ GOOD — new env var lands in code and README in the same turn
+AUTH_DATABASE_PATH added to lib/auth.js
+AUTH_DATABASE_PATH row added to README.md and docs/implementation.md
+
+# ❌ BAD — ship the code and mention docs later
+AUTH_DATABASE_PATH added to lib/auth.js
+"we should update the README next"
+```

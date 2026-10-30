@@ -9,8 +9,9 @@ A small Next.js app that connects to **GitHub** or **GitLab** with **OAuth 2.0**
 3. Lists repositories you own or can access.
 4. Lets you select one repository as the **target**. The selection is stored in an httpOnly cookie.
 5. After you pick a repo, choose a branch. The app checks for `PROJECT_MANAGER.md` on that branch and can create it with a commit if it is missing.
+6. The dashboard maps every `.md` and `.markdown` file on that branch. Click a file to open its contents in a side drawer.
 
-The app does not clone code or open issues. The only write is committing `PROJECT_MANAGER.md` to the selected branch when you ask it to.
+The app does not clone code or open issues. The only write is committing `PROJECT_MANAGER.md` to the selected branch when you ask it to. Markdown files are read from GitHub or GitLab when you open them.
 
 How the app is built: [docs/implementation.md](docs/implementation.md). Better Auth and database setup: [docs/better-auth.md](docs/better-auth.md). Reuse the auth flow in another project: [packages/auth/README.md](packages/auth/README.md).
 
@@ -88,6 +89,10 @@ Click a repository in the dashboard list. The app stores `{ id, name, fullName, 
 
 That repo is shown at the top of the dashboard as the current target, with a branch picker. If `PROJECT_MANAGER.md` is missing on the selected branch, a warning and **Create PROJECT_MANAGER.md** button appear. **Clear** removes the target. **Disconnect** signs out and deletes the target cookie.
 
+## Markdown files
+
+With a repository and branch selected, the dashboard lists Markdown files as a folder map. `README` files are listed first in each folder. Filter the list by path. Click a file to open a drawer with the rendered contents. **Close**, the backdrop, or Escape dismisses the drawer. Switching branch or repository loads that branch's files.
+
 ## API routes
 
 | Method | Path | Description |
@@ -106,13 +111,15 @@ All `/api/repos` and `/api/target` routes require a signed-in session.
 packages/auth/                   Reusable GitHub/GitLab auth library
 lib/auth.js                      createGitAuth() for this app
 lib/auth-client.js               createGitAuthClient() for this app
-app/dashboard/page.js            Repo list and target
-app/actions.js                   Sign-out, select/clear target, create PROJECT_MANAGER.md
+app/dashboard/page.js            Repo list, target, and Markdown map
+app/actions.js                   Sign-out, select/clear target, create PROJECT_MANAGER.md, read a Markdown file
 app/api/auth/[...all]/           OAuth callbacks
 app/api/repos/route.js           List repositories
 app/api/target/route.js          Read/write/clear target cookie
+components/MarkdownMap.js        Markdown folder map and file drawer
 lib/repos.js                     GitHub and GitLab list helpers
 lib/project-manager.js           Branch list, PROJECT_MANAGER.md check/create
+lib/markdown-files.js            List and read Markdown files on the target branch
 lib/target.js                    Target cookie helpers
 ```
 
