@@ -79,7 +79,7 @@ The app asks GitHub for:
 - `user:email` — required by Better Auth to create the user record
 - `repo` — list private repositories
 
-GitHub OAuth Apps have no read-only private-repo scope. `repo` also allows write access. This project only lists repositories; it does not push, delete, or change repo settings.
+GitHub OAuth Apps have no read-only private-repo scope. `repo` also allows write access. This app lists repositories and, when asked, commits a `PROJECT_MANAGER.md` file to the selected branch.
 
 ### Production callback
 
@@ -113,9 +113,9 @@ Click **Add new application** and fill in:
 | **Name** | `Git Connector` (any name is fine) |
 | **Redirect URI** | `http://localhost:3000/api/auth/callback/gitlab` |
 | **Confidential** | Enabled (checked) |
-| **Scopes** | `read_user` and `read_api` |
+| **Scopes** | `read_user` and `api` |
 
-Leave other scopes unchecked.
+Leave other scopes unchecked. If this GitLab application already exists with only `read_api`, edit it, enable `api`, and save. Anyone already connected must **Disconnect** in this app and connect GitLab again so GitLab issues a token with write access.
 
 Click **Save application**.
 
@@ -138,7 +138,7 @@ AUTH_GITLAB_SECRET=gloas-xxxxxxxxxxxxxxxxxxxxxxxx
 ### 4. Scopes this app requests
 
 - `read_user` — identify the signed-in user
-- `read_api` — list projects the user can access
+- `api` — list projects and create `PROJECT_MANAGER.md` on a selected branch (`api` includes `read_api`)
 
 ### Production redirect URI
 
@@ -198,3 +198,4 @@ Open [http://localhost:3000](http://localhost:3000) and click **Connect GitHub**
 - Skipping `npm run auth:migrate` so Better Auth has no SQLite tables.
 - Forgetting to restart the dev server after editing env vars.
 - Committing `.env.local` (it is gitignored on purpose).
+- GitLab application missing the `api` scope, or an existing GitLab session that still has a `read_api` token. Enable `api` on the GitLab application, then Disconnect and connect again.

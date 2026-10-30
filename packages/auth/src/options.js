@@ -1,5 +1,5 @@
 export const DEFAULT_GITHUB_SCOPES = ["repo"];
-export const DEFAULT_GITLAB_SCOPES = ["read_api"];
+export const DEFAULT_GITLAB_SCOPES = ["api"];
 export const DEFAULT_ERROR_URL = "http://localhost:3000";
 export const DEFAULT_SQLITE_PATH = "data/auth.sqlite";
 export const SOCIAL_PROVIDERS = new Set(["github", "gitlab"]);

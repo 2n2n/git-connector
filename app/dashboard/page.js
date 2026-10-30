@@ -1,6 +1,11 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { disconnect } from "@/app/actions";
+import {
+  checkProjectManagerFile,
+  listBranchesForTarget,
+  resolveTargetBranch,
+} from "@/lib/project-manager";
 import { getConnectorSession, listReposForSession } from "@/lib/repos";
 import { getTarget } from "@/lib/target";
 import { GitHubIcon, GitLabIcon } from "@/components/Icons";
@@ -25,6 +30,43 @@ async function Dashboard() {
   const storedTarget = await getTarget();
   const target =
     storedTarget?.provider === session.provider ? storedTarget : null;
+
+  const listedTarget = target
+    ? repos.find((repo) => repo.id === target.id)
+    : null;
+
+  let branches = [];
+  let projectManager = null;
+  let projectManagerError = null;
+  let branchListError = null;
+
+  if (target) {
+    try {
+      branches = await listBranchesForTarget(session, target);
+    } catch (err) {
+      branchListError = err.message || "Could not load branches.";
+    }
+  }
+
+  const selectedBranch =
+    resolveTargetBranch(target, listedTarget?.defaultBranch || "") ||
+    branches[0] ||
+    "";
+
+  if (target && selectedBranch) {
+    try {
+      projectManager = await checkProjectManagerFile(
+        session,
+        target,
+        selectedBranch,
+      );
+    } catch (err) {
+      projectManagerError =
+        err.message || "Could not check PROJECT_MANAGER.md.";
+    }
+  } else if (target && branchListError) {
+    projectManagerError = branchListError;
+  }
 
   const ProviderIcon =
     session.provider === "gitlab" ? GitLabIcon : GitHubIcon;
@@ -55,7 +97,13 @@ async function Dashboard() {
         </form>
       </header>
 
-      <TargetedRepo target={target} />
+      <TargetedRepo
+        target={target}
+        branches={branches}
+        selectedBranch={selectedBranch}
+        projectManager={projectManager}
+        projectManagerError={projectManagerError}
+      />
 
       {error ? (
         <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-200">

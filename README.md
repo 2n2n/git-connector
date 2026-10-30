@@ -8,8 +8,9 @@ A small Next.js app that connects to **GitHub** or **GitLab** with **OAuth 2.0**
 2. Completes the OAuth 2.0 authorization-code flow with that provider.
 3. Lists repositories you own or can access.
 4. Lets you select one repository as the **target**. The selection is stored in an httpOnly cookie.
+5. After you pick a repo, choose a branch. The app checks for `PROJECT_MANAGER.md` on that branch and can create it with a commit if it is missing.
 
-The app does not write to repositories, clone code, or open issues. It only authenticates and lists/selects.
+The app does not clone code or open issues. The only write is committing `PROJECT_MANAGER.md` to the selected branch when you ask it to.
 
 How the app is built: [docs/implementation.md](docs/implementation.md). Better Auth and database setup: [docs/better-auth.md](docs/better-auth.md). Reuse the auth flow in another project: [packages/auth/README.md](packages/auth/README.md).
 
@@ -83,9 +84,9 @@ You can only be connected to one provider at a time. Disconnect, then connect th
 
 ## Targeting a repository
 
-Click a repository in the dashboard list. The app stores `{ id, name, fullName, url, private, provider }` in the `targeted_repo` httpOnly cookie.
+Click a repository in the dashboard list. The app stores `{ id, name, fullName, url, private, provider, branch, defaultBranch }` in the `targeted_repo` httpOnly cookie.
 
-That repo is shown at the top of the dashboard as the current target. **Clear** removes it. **Disconnect** signs out and deletes the target cookie.
+That repo is shown at the top of the dashboard as the current target, with a branch picker. If `PROJECT_MANAGER.md` is missing on the selected branch, a warning and **Create PROJECT_MANAGER.md** button appear. **Clear** removes the target. **Disconnect** signs out and deletes the target cookie.
 
 ## API routes
 
@@ -94,7 +95,7 @@ That repo is shown at the top of the dashboard as the current target. **Clear** 
 | `GET`, `POST` | `/api/auth/*` | Better Auth OAuth and session endpoints |
 | `GET` | `/api/repos` | JSON list of repositories for the signed-in provider |
 | `GET` | `/api/target` | Current targeted repository, or `null` |
-| `POST` | `/api/target` | Set the target. Body: `{ id, name, fullName, url, private, provider }` |
+| `POST` | `/api/target` | Set the target. Body: `{ id, name, fullName, url, private, provider, branch, defaultBranch }` |
 | `DELETE` | `/api/target` | Clear the target |
 
 All `/api/repos` and `/api/target` routes require a signed-in session.
@@ -106,11 +107,12 @@ packages/auth/                   Reusable GitHub/GitLab auth library
 lib/auth.js                      createGitAuth() for this app
 lib/auth-client.js               createGitAuthClient() for this app
 app/dashboard/page.js            Repo list and target
-app/actions.js                   Sign-out, select/clear target
+app/actions.js                   Sign-out, select/clear target, create PROJECT_MANAGER.md
 app/api/auth/[...all]/           OAuth callbacks
 app/api/repos/route.js           List repositories
 app/api/target/route.js          Read/write/clear target cookie
-lib/repos.js                     GitHub and GitLab API helpers
+lib/repos.js                     GitHub and GitLab list helpers
+lib/project-manager.js           Branch list, PROJECT_MANAGER.md check/create
 lib/target.js                    Target cookie helpers
 ```
 

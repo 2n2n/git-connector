@@ -32,7 +32,7 @@ import { createGitAuth } from "@github-connector/auth/server";
 export const auth = createGitAuth();
 ```
 
-`createGitAuth()` reads the same env vars as this app:
+`createGitAuth()` reads the same env vars as this app. Default GitHub scope is `repo`; default GitLab scope is `api` (Better Auth also requests identity scopes).
 
 | Variable | Purpose |
 | --- | --- |
